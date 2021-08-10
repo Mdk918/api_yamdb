@@ -1,13 +1,20 @@
-from django.urls import path, include, re_path
-from .views import ActivateCreateToken
-from rest_framework.routers import SimpleRouter
-router = SimpleRouter()
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
+from .views import CategoryViewSet, GenreViewSet, CommentViewSet, ReviewViewSet
 
-router.register('authen', ActivateCreateToken)
+router = DefaultRouter()
+router.register('categories', CategoryViewSet, basename='categories')
+router.register('genres', GenreViewSet, basename='genres')
+router.register(
+    r'titles/(?P<title_id>\d+)/reviews',
+    ReviewViewSet, basename='reviews'
+)
+router.register(
+    r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+/comments)',
+    CommentViewSet, basename='comments'
+)
 
 urlpatterns = [
-    path('auth/', include('djoser.urls')),
-    # JWT-эндпоинты, для управления JWT-токенами:
-    path('auth/', include('djoser.urls.jwt')),
-    path('v1/', include(router.urls)),
+    path('api/v1/', include(router.urls)),
+    path('api/v1/', include('djoser.urls.jwt')),
 ]
