@@ -54,13 +54,14 @@ class Title(models.Model):
     year = models.PositiveSmallIntegerField(
         verbose_name='Нзвание произведения'
     )
-    description = models.TextField(verbose_name='Описание')
+    description = models.TextField(verbose_name='Описание',
+                                   blank=True)
     genre = models.ManyToManyField(Genre,
                                    blank=True,
                                    related_name='titles',
                                    verbose_name='Жанр')
     category = models.ForeignKey(Category,
-                                 on_delete=models.CASCADE,
+                                 on_delete=models.SET_NULL,
                                  blank=True,
                                  null=True,
                                  related_name='titles',
