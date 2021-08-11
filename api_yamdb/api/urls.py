@@ -1,15 +1,15 @@
 from django.urls import path, include
-from .views import (ActivateCreateToken,
+from .views import (
                     CreateUser,
                     CategoryViewSet,
                     GenreViewSet,
                     TitleViewSet,
                     ReviewViewSet,
-                    CommentViewSet,)
+                    CommentViewSet,
+                    ActivateToken)
 from rest_framework.routers import SimpleRouter
 router = SimpleRouter()
 
-router.register('authen', ActivateCreateToken)
 router.register('categories', CategoryViewSet, basename='categories')
 router.register('genres', GenreViewSet, basename='genres')
 router.register('titles', TitleViewSet, basename='titles')
@@ -23,9 +23,7 @@ router.register(
 )
 
 urlpatterns = [
-    path('v1/auth/', include('djoser.urls')),
-    # JWT-эндпоинты, для управления JWT-токенами:
-    path('v1/auth/', include('djoser.urls.jwt')),
     path('v1/auth/signup/', CreateUser.as_view()),
+    path('v1/auth/token/', ActivateToken.as_view()),
     path('v1/', include(router.urls)),
 ]

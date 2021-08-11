@@ -1,8 +1,7 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from djoser.views import UserViewSet
+from django.contrib.auth.tokens import default_token_generator
+from django.dispatch import Signal
 from rest_framework_simplejwt.tokens import RefreshToken
-from djoser import signals
-from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.generics import CreateAPIView, get_object_or_404
 from rest_framework import filters, mixins, permissions, serializers, status, viewsets
@@ -20,16 +19,33 @@ from .serializers import (UserCreateCustomSerializer,
                           ReviewSerializer,
                           CommentSerializer)
 
-class ActivateCreateToken(UserViewSet):
-    @action(["post"], detail=False, url_path='token')
-    def activation(self, request, *args, **kwargs):
+# New user has registered. Args: user, request.
+user_registered = Signal()
+
+# User has activated his or her account. Args: user, request.
+user_activated = Signal()
+
+
+class CreateUser(CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserCreateCustomSerializer
+    permission_classes = (AllowAny,)
+
+
+class ActivateToken(CreateAPIView):
+    serializer_class = CustomActivationSerializer
+    queryset = User.objects.all()
+    permission_classes = (AllowAny,)
+    token_generator = default_token_generator
+
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.user
         user.is_active = True
         user.save()
 
-        signals.user_activated.send(
+        user_activated.send(
             sender=self.__class__, user=user, request=self.request
         )
         refresh = RefreshToken.for_user(user)
@@ -39,12 +55,6 @@ class ActivateCreateToken(UserViewSet):
             'access': str(refresh.access_token),
         }
         return Response(token, status=status.HTTP_204_NO_CONTENT)
-
-
-class CreateUser(CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserCreateCustomSerializer
-    permission_classes = (AllowAny,)
 
 
 class CategoryViewSet(mixins.CreateModelMixin,

@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'p&l%385148kslhtyn^##a1)ilz@4zqj=rq&agdol^##zgl9(vs'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -147,16 +147,6 @@ SIMPLE_JWT = {
    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-DJOSER = {
-    "USER_ID_FIELD": "username",
-    "LOGIN_FIELD": "username",
-    "SEND_ACTIVATION_EMAIL": True,
-    "ACTIVATION_URL": "api/v1/auth/token/ or send request with code username: {username}/confirmation_code: {confirmation_code}",
-    'SERIALIZERS': {
-        'user_create': 'api.serializers.UserCreateCustomSerializer',
-        'activation': 'api.serializers.CustomActivationSerializer',
-    },
-}
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 # указываем директорию, в которую будут складываться файлы писем

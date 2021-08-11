@@ -37,18 +37,16 @@ class UserCreateCustomSerializer(serializers.ModelSerializer):
                       f'Confirmation code {token}',
                       'from@example.com',  # Это поле "От кого"
                       [user.email],)
-
-
         return user
 
 
-class CustomUidAndTokenSerializer(serializers.Serializer):
+class CustomUsernamedAndTokenSerializer(serializers.Serializer):
     username = serializers.CharField()
     confirmation_code = serializers.CharField()
 
     default_error_messages = {
-        "invalid_token": settings.CONSTANTS.messages.INVALID_TOKEN_ERROR,
-        "invalid_username": settings.CONSTANTS.messages.INVALID_UID_ERROR,
+        "invalid_token": "invalid token",
+        "invalid_username": "invalid_username",
     }
 
     def validate(self, attrs):
@@ -74,9 +72,9 @@ class CustomUidAndTokenSerializer(serializers.Serializer):
             )
 
 
-class CustomActivationSerializer(CustomUidAndTokenSerializer):
+class CustomActivationSerializer(CustomUsernamedAndTokenSerializer):
     default_error_messages = {
-        "stale_token": settings.CONSTANTS.messages.STALE_TOKEN_ERROR
+        "stale_token": "stale_token",
     }
 
     def validate(self, attrs):
