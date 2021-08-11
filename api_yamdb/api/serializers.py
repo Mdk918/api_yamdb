@@ -6,15 +6,18 @@ from djoser.conf import settings
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from reviews.models import User
-from reviews.models import Category, Genre
+from reviews.models import Category, Genre, Title, User
 
 
 class UserCreateCustomSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(style={"input_type": "email"}, write_only=True)
+    email = serializers.EmailField(
+        style={"input_type": "email"}, write_only=True
+    )
 
     default_error_messages = {
-        "cannot_create_user": settings.CONSTANTS.messages.CANNOT_CREATE_USER_ERROR
+        "cannot_create_user": (
+            settings.CONSTANTS.messages.CANNOT_CREATE_USER_ERROR
+        )
     }
 
     class Meta:
@@ -42,7 +45,6 @@ class UserCreateCustomSerializer(serializers.ModelSerializer):
         return user
 
 
-
 class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -55,3 +57,25 @@ class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Genre
         fields = ('name', 'slug')
+
+
+class Title_GET_Serializer(serializers.ModelSerializer):
+    category = CategorySerializer(read_only=True)
+    genre = GenreSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Title
+        fields = ('name', 'year', 'description', 'category', 'genre')
+
+
+class Title_OTHER_Serializer(serializers.ModelSerializer):
+    category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(), slug_field='slug'
+    )
+    genre = serializers.SlugRelatedField(
+        queryset=Genre.objects.all(), many=True, slug_field='slug'
+    )
+
+    class Meta:
+        model = Title
+        fields = ('name', 'year', 'description', 'category', 'genre')
