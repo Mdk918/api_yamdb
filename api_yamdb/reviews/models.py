@@ -1,7 +1,6 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-
-# Create your models here.
 
 
 class User(AbstractUser):
@@ -17,7 +16,7 @@ class User(AbstractUser):
 
     email = models.EmailField('email address', unique=True)
     password = models.CharField('password', max_length=128, blank=True)
-    biography = models.TextField(
+    bio = models.TextField(
         'Биография',
         blank=True,
     )
@@ -71,3 +70,40 @@ class Title(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Review(models.Model):
+    text = models.TextField()
+    score = models.IntegerField(
+        default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(10)]
+    )
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name='reviews'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='reviews'
+    )
+
+
+class Comment(models.Model):
+    text = models.TextField()
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+    review = models.ForeignKey(
+        Review,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )

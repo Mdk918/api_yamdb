@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'p&l%385148kslhtyn^##a1)ilz@4zqj=rq&agdol^##zgl9(vs'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_filters',
     'reviews',
     'api',
     'djoser',
@@ -146,22 +147,11 @@ REST_FRAMEWORK = {
 
 
 SIMPLE_JWT = {
-   'ACCESS_TOKEN_LIFETIME': timedelta(days=5),
-   'AUTH_HEADER_TYPES': ('Bearer',),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=5),
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-DJOSER = {
-    "USER_ID_FIELD": "username",
-    "LOGIN_FIELD": "username",
-    "SEND_ACTIVATION_EMAIL": True,
-    "ACTIVATION_URL": "activate/{uid}/{token}",
-    'SERIALIZERS': {
-        'user_create': 'api.serializers.UserCreateCustomSerializer',
-    },
-}
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 # указываем директорию, в которую будут складываться файлы писем
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
-
-SITE_NAME = "Yamdb"

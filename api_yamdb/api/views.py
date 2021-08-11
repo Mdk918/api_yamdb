@@ -1,26 +1,52 @@
-from djoser.views import UserViewSet
-from rest_framework_simplejwt.tokens import RefreshToken
-
-from djoser import signals
-from rest_framework.decorators import action
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, mixins, permissions, serializers, status, viewsets
-from reviews.models import Category, Genre, Title
-from .permissions import AdminOrReadOnly
-from .serializers import CategorySerializer, GenreSerializer, Title_GET_Serializer, Title_OTHER_Serializer
+from django.contrib.auth.tokens import default_token_generator
+from django.dispatch import Signal
+from rest_framework.pagination import PageNumberPagination
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.response import Response
+from rest_framework.generics import CreateAPIView, get_object_or_404
+from rest_framework import filters, mixins, status, viewsets
+from rest_framework.permissions import AllowAny
 
-class ActivateCreateToken(UserViewSet):
-    @action(["post"], detail=False)
-    def activation(self, request, *args, **kwargs):
+
+from reviews.models import User, Category, Genre, Title, Review, Comment
+from .permissions import AdminOrReadOnly, AuthorOrModeratorOrAdminOrReadOnly
+from .serializers import (UserCreateCustomSerializer,
+                          CustomActivationSerializer,
+                          CategorySerializer,
+                          GenreSerializer,
+                          Title_GET_Serializer,
+                          Title_OTHER_Serializer,
+                          ReviewSerializer,
+                          CommentSerializer)
+
+# New user has registered. Args: user, request.
+user_registered = Signal()
+
+# User has activated his or her account. Args: user, request.
+user_activated = Signal()
+
+
+class CreateUser(CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserCreateCustomSerializer
+    permission_classes = (AllowAny,)
+
+
+class ActivateToken(CreateAPIView):
+    serializer_class = CustomActivationSerializer
+    queryset = User.objects.all()
+    permission_classes = (AllowAny,)
+    token_generator = default_token_generator
+
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.user
         user.is_active = True
         user.save()
 
-        signals.user_activated.send(
+        user_activated.send(
             sender=self.__class__, user=user, request=self.request
         )
         refresh = RefreshToken.for_user(user)
@@ -30,7 +56,6 @@ class ActivateCreateToken(UserViewSet):
             'access': str(refresh.access_token),
         }
         return Response(token, status=status.HTTP_204_NO_CONTENT)
-
 
 
 class CategoryViewSet(mixins.CreateModelMixin,
@@ -54,9 +79,9 @@ class CategoryViewSet(mixins.CreateModelMixin,
 
 
 class GenreViewSet(mixins.CreateModelMixin,
-                      mixins.ListModelMixin,
-                      mixins.DestroyModelMixin,
-                      viewsets.GenericViewSet):
+                   mixins.ListModelMixin,
+                   mixins.DestroyModelMixin,
+                   viewsets.GenericViewSet):
     """
     Вьюесет модели Genre
     GenreViewSet реализует операции:
@@ -93,3 +118,41 @@ class TitleViewSet(viewsets.ModelViewSet):
         if self.request.method == "GET":
             return Title_GET_Serializer
         return Title_OTHER_Serializer
+
+
+class ReviewViewSet(viewsets.GenericViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = (AuthorOrModeratorOrAdminOrReadOnly,)
+
+    def get_queryset(self):
+        title_id = self.kwargs.get('title_id')
+        title = get_object_or_404(Title, pk=title_id)
+        reviews = title.reviews.all()
+        return reviews
+
+    def perform_create(self, serializer):
+        title_id = self.kwargs.get('title_id')
+        title = get_object_or_404(Title, pk=title_id)
+        serializer.save(title=title, author=self.request.user)
+
+
+class CommentViewSet(viewsets.GenericViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = (AuthorOrModeratorOrAdminOrReadOnly,)
+
+    def get_queryset(self):
+        title_id = self.kwargs.get('title_id')
+        review_id = self.kwargs.get('review_id')
+        get_object_or_404(Title, pk=title_id)
+        review = get_object_or_404(Review, pk=review_id)
+        comments = review.comments.all()
+        return comments
+
+    def perform_create(self, serializer):
+        title_id = self.kwargs.get('title_id')
+        review_id = self.kwargs.get('review_id')
+        title = get_object_or_404(Title, pk=title_id)
+        review = get_object_or_404(Review, pk=review_id)
+        serializer.save(title=title, review=review, author=self.request.user)
