@@ -1,7 +1,7 @@
 from django.db import IntegrityError, transaction
-from rest_framework import exceptions, serializers, status
-from djoser.conf import settings
+from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
+from rest_framework.generics import get_object_or_404
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 
@@ -31,6 +31,10 @@ class UserCreateCustomSerializer(serializers.ModelSerializer):
 
     def perform_create(self, validated_data):
         with transaction.atomic():
+            if validated_data['username'] == 'me':
+                raise serializers.ValidationError(
+                    'Использование данного имени запрещено'
+                )
             user = User.objects.create_user(**validated_data)
             user.is_active = False
             user.save(update_fields=["is_active"])
@@ -40,6 +44,14 @@ class UserCreateCustomSerializer(serializers.ModelSerializer):
                       'from@example.com',  # Это поле "От кого"
                       [user.email],)
         return user
+
+
+class UserSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'first_name', 'last_name',
+                  'bio', 'role')
 
 
 class CustomUsernamedAndTokenSerializer(serializers.Serializer):
@@ -53,15 +65,8 @@ class CustomUsernamedAndTokenSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         validated_data = super().validate(attrs)
-        try:
-            username = self.initial_data.get("username", "")
-            self.user = User.objects.get(username=username)
-        except (User.DoesNotExist, ValueError, TypeError, OverflowError):
-            key_error = "invalid_username"
-            raise ValidationError(
-                {"username": [self.error_messages[key_error]]}, code=key_error
-            )
-
+        username = self.initial_data.get("username", "")
+        self.user = get_object_or_404(User, username=username)
         is_token_valid = self.context["view"].token_generator.check_token(
             self.user, self.initial_data.get("confirmation_code", "")
         )
@@ -70,20 +75,9 @@ class CustomUsernamedAndTokenSerializer(serializers.Serializer):
         else:
             key_error = "invalid_confirmation_code"
             raise ValidationError(
-                {"confirmation_code": [self.error_messages[key_error]]}, code=key_error
+                {"confirmation_code": [self.error_messages[key_error]]},
+                code=key_error
             )
-
-
-class CustomActivationSerializer(CustomUsernamedAndTokenSerializer):
-    default_error_messages = {
-        "stale_token": "stale_token",
-    }
-
-    def validate(self, attrs):
-        attrs = super().validate(attrs)
-        if not self.user.is_active:
-            return attrs
-        raise exceptions.PermissionDenied(self.error_messages["stale_token"])
 
 
 class CategorySerializer(serializers.ModelSerializer):
