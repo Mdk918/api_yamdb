@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_filters',
     'reviews',
     'api',
     'djoser',
@@ -150,14 +151,13 @@ DJOSER = {
     "USER_ID_FIELD": "username",
     "LOGIN_FIELD": "username",
     "SEND_ACTIVATION_EMAIL": True,
-    "ACTIVATION_URL": "activate/{uid}/{token}",
+    "ACTIVATION_URL": "api/v1/auth/token/ or send request with code username: {username}/confirmation_code: {confirmation_code}",
     'SERIALIZERS': {
         'user_create': 'api.serializers.UserCreateCustomSerializer',
+        'activation': 'api.serializers.CustomActivationSerializer',
     },
 }
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 # указываем директорию, в которую будут складываться файлы писем
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
-
-SITE_NAME = "Yamdb"
