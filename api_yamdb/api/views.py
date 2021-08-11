@@ -73,9 +73,15 @@ class GenreViewSet(mixins.CreateModelMixin,
 
 class TitleViewSet(viewsets.ModelViewSet):
     """
-
+    Вьюсет модели Title
+    GenreViewSet реализует операции:
+        <POST> - добавление нового произведения, достпуно только Администратору
+        <GET> - получение списка произведений, доступно без токена
+        <GET + {title id}> - получение информации о произведении, доступно без токена
+        <DELETE> - удаление категории, доступно только Администратору
+    Реализована фильтрация по полям: 'category', 'genre', 'name', 'year'
     """
-    queryset = Title.objects.all
+    queryset = Title.objects.all()
     permission_classes = (AdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category', 'genre', 'name', 'year')
