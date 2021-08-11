@@ -16,8 +16,9 @@ class User(AbstractUser):
 
     email = models.EmailField('email address', unique=True)
     password = models.CharField('password', max_length=128, blank=True)
-    bio = models.TextField(
+    bio = models.CharField(
         'Биография',
+        max_length=200,
         blank=True,
     )
     role = models.CharField(verbose_name='Роль пользователя', max_length=50)
@@ -53,13 +54,14 @@ class Title(models.Model):
     year = models.PositiveSmallIntegerField(
         verbose_name='Нзвание произведения'
     )
-    description = models.TextField(verbose_name='Описание')
+    description = models.TextField(verbose_name='Описание',
+                                   blank=True)
     genre = models.ManyToManyField(Genre,
                                    blank=True,
                                    related_name='titles',
                                    verbose_name='Жанр')
     category = models.ForeignKey(Category,
-                                 on_delete=models.CASCADE,
+                                 on_delete=models.SET_NULL,
                                  blank=True,
                                  null=True,
                                  related_name='titles',
