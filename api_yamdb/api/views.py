@@ -3,13 +3,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from djoser import signals
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, permissions, serializers, status, viewsets
 from reviews.models import Category, Genre, Title
 from .permissions import AdminOrReadOnly
 from .serializers import CategorySerializer, GenreSerializer, Title_GET_Serializer, Title_OTHER_Serializer
-
 
 class ActivateCreateToken(UserViewSet):
     @action(["post"], detail=False)
@@ -50,6 +50,7 @@ class CategoryViewSet(mixins.CreateModelMixin,
     permission_classes = (AdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('name',)
+    pagination_class = PageNumberPagination
 
 
 class GenreViewSet(mixins.CreateModelMixin,
@@ -69,6 +70,7 @@ class GenreViewSet(mixins.CreateModelMixin,
     permission_classes = (AdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('name',)
+    pagination_class = PageNumberPagination
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -85,6 +87,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (AdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category', 'genre', 'name', 'year')
+    pagination_class = PageNumberPagination
 
     def get_serializer_class(self):
         if self.request.method == "GET":
