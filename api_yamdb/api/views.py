@@ -1,17 +1,15 @@
-from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth.tokens import default_token_generator
 from django.dispatch import Signal
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.decorators import action
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.response import Response
-from rest_framework.generics import CreateAPIView, get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
-from rest_framework.permissions import AllowAny
+from rest_framework.decorators import action
+from rest_framework.generics import CreateAPIView, get_object_or_404
 from rest_framework.pagination import PageNumberPagination
-
-
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import User, Category, Genre, Title, Review, Comment
+from .filters import TitleFilter
 from .permissions import (AdminOrReadOnly,
                           AuthorOrModeratorOrAdminOrReadOnly,
                           AdminOrSuperUser,
@@ -113,10 +111,14 @@ class ActivateToken(CreateAPIView):
         return Response(token, status=status.HTTP_200_OK)
 
 
-class CategoryViewSet(mixins.CreateModelMixin,
-                      mixins.ListModelMixin,
-                      mixins.DestroyModelMixin,
-                      viewsets.GenericViewSet):
+class CreateListDestroyViewSet(mixins.CreateModelMixin,
+                               mixins.ListModelMixin,
+                               mixins.DestroyModelMixin,
+                               viewsets.GenericViewSet):
+    pass
+
+
+class CategoryViewSet(CreateListDestroyViewSet):
     """
     Вьюесет модели Category
     CategoryViewSet реализует операции:
@@ -127,16 +129,19 @@ class CategoryViewSet(mixins.CreateModelMixin,
     """
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (AdminOrSuperUser,)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('name',)
     pagination_class = PageNumberPagination
 
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            self.permission_classes = [AdminOrReadOnly, ]
+        else:
+            self.permission_classes = [AdminOrSuperUser, ]
+        return super(CategoryViewSet, self).get_permissions()
 
-class GenreViewSet(mixins.CreateModelMixin,
-                   mixins.ListModelMixin,
-                   mixins.DestroyModelMixin,
-                   viewsets.GenericViewSet):
+
+class GenreViewSet(CreateListDestroyViewSet):
     """
     Вьюесет модели Genre
     GenreViewSet реализует операции:
@@ -147,10 +152,16 @@ class GenreViewSet(mixins.CreateModelMixin,
     """
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (AdminOrSuperUser,)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('name',)
     pagination_class = PageNumberPagination
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            self.permission_classes = [AdminOrReadOnly, ]
+        else:
+            self.permission_classes = [AdminOrSuperUser, ]
+        return super(GenreViewSet, self).get_permissions()
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -164,15 +175,21 @@ class TitleViewSet(viewsets.ModelViewSet):
     Реализована фильтрация по полям: 'category', 'genre', 'name', 'year'
     """
     queryset = Title.objects.all()
-    permission_classes = (AdminOrReadOnly,)
-    filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('category', 'genre', 'name', 'year')
     pagination_class = PageNumberPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitleFilter
 
     def get_serializer_class(self):
         if self.request.method == "GET":
             return Title_GET_Serializer
         return Title_OTHER_Serializer
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            self.permission_classes = [AdminOrReadOnly, ]
+        else:
+            self.permission_classes = [AdminOrSuperUser, ]
+        return super(TitleViewSet, self).get_permissions()
 
 
 class ReviewViewSet(viewsets.GenericViewSet):
