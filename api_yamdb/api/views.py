@@ -161,6 +161,7 @@ class CategoryViewSet(CreateListDestroyViewSet):
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('name',)
     pagination_class = PageNumberPagination
+    lookup_field = 'slug'
 
     def get_permissions(self):
         if self.request.method == 'GET':
@@ -184,6 +185,7 @@ class GenreViewSet(CreateListDestroyViewSet):
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('name',)
     pagination_class = PageNumberPagination
+    lookup_field = 'slug'
 
     def get_permissions(self):
         if self.request.method == 'GET':
