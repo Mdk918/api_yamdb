@@ -1,5 +1,5 @@
 from django.db import IntegrityError, transaction
-from rest_framework import serializers, status
+from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from django.contrib.auth.tokens import default_token_generator
@@ -100,7 +100,7 @@ class Title_GET_Serializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ('name', 'year', 'description', 'category', 'genre')
+        fields = ('id', 'name', 'year', 'description', 'category', 'genre')
 
 
 class Title_OTHER_Serializer(serializers.ModelSerializer):
@@ -113,7 +113,7 @@ class Title_OTHER_Serializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ('name', 'year', 'description', 'category', 'genre')
+        fields = ('id', 'name', 'year', 'description', 'category', 'genre')
 
 
 class ReviewSerializer(serializers.ModelSerializer):
