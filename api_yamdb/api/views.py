@@ -14,7 +14,8 @@ from reviews.models import User, Category, Genre, Title, Review, Comment
 from .permissions import (AdminOrReadOnly,
                           AuthorOrModeratorOrAdminOrReadOnly,
                           AdminOrSuperUser,
-                          AdminOrAuthUser)
+                          AdminOrAuthUser,
+                          AdminOrSuperUserOrModerator)
 from .serializers import (UserCreateCustomSerializer,
                           CategorySerializer,
                           GenreSerializer,
@@ -24,6 +25,8 @@ from .serializers import (UserCreateCustomSerializer,
                           CommentSerializer,
                           UserSerializers,
                           CustomUsernamedAndTokenSerializer)
+from .filters import TitleFilter
+
 
 # New user has registered. Args: user, request.
 user_registered = Signal()
@@ -43,7 +46,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return (AdminOrAuthUser(),)
         return super().get_permissions()
 
-    def retrieve(self, request, pk=None):
+    def retrieve(self, request, pk=None, *args, **kwargs):
         queryset = User.objects.all()
         user = get_object_or_404(queryset, username=pk)
         serializer = UserSerializers(user)
@@ -58,14 +61,40 @@ class UserViewSet(viewsets.ModelViewSet):
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         if request.method == 'PATCH':
+            partial = kwargs.pop('partial', True)
             if user.is_authenticated:
-                serializer = self.get_serializer(user, data=request.data)
-                serializer.is_valid(raise_exception=True)
-                self.perform_update(serializer)
-                return Response(serializer.data, status=status.HTTP_200_OK)
+                serializer = self.get_serializer(user, data=request.data, partial=partial)
+                if serializer.is_valid():
+                    if 'role' in request.data and request.user.role != 'admin':
+                        role = request.data['role']
+                        if role != request.user.role:
+                            return Response(serializer.data)
+                    self.perform_update(serializer)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response(status=status.HTTP_200_OK)
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         if request.method == 'DELETE':
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def update(self, request, pk=None, *args, **kwargs):
+        partial = kwargs.pop('partial', True)
+        queryset = User.objects.all()
+        user = get_object_or_404(queryset, username=pk)
+        if 'role' in request.data:
+            role = request.data['role']
+            if role not in ['admin', 'user', 'moderator']:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(user, data=request.data, partial=partial)
+        if serializer.is_valid():
+            self.perform_update(serializer)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_200_OK)
+
+    def destroy(self, request, pk=None, *args, **kwargs):
+        queryset = User.objects.all()
+        user = get_object_or_404(queryset, username=pk)
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CreateUser(CreateAPIView):
@@ -112,10 +141,14 @@ class ActivateToken(CreateAPIView):
         return Response(token, status=status.HTTP_200_OK)
 
 
-class CategoryViewSet(mixins.CreateModelMixin,
-                      mixins.ListModelMixin,
-                      mixins.DestroyModelMixin,
-                      viewsets.GenericViewSet):
+class CreateListDestroyViewSet(mixins.CreateModelMixin,
+                               mixins.ListModelMixin,
+                               mixins.DestroyModelMixin,
+                               viewsets.GenericViewSet):
+    pass
+
+
+class CategoryViewSet(CreateListDestroyViewSet):
     """
     Вьюесет модели Category
     CategoryViewSet реализует операции:
@@ -126,16 +159,19 @@ class CategoryViewSet(mixins.CreateModelMixin,
     """
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (AdminOrSuperUser,)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('name',)
     pagination_class = PageNumberPagination
 
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            self.permission_classes = [AdminOrReadOnly, ]
+        else:
+            self.permission_classes = [AdminOrSuperUser, ]
+        return super(CategoryViewSet, self).get_permissions()
 
-class GenreViewSet(mixins.CreateModelMixin,
-                   mixins.ListModelMixin,
-                   mixins.DestroyModelMixin,
-                   viewsets.GenericViewSet):
+
+class GenreViewSet(CreateListDestroyViewSet):
     """
     Вьюесет модели Genre
     GenreViewSet реализует операции:
@@ -146,10 +182,16 @@ class GenreViewSet(mixins.CreateModelMixin,
     """
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (AdminOrSuperUser,)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('name',)
     pagination_class = PageNumberPagination
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            self.permission_classes = [AdminOrReadOnly, ]
+        else:
+            self.permission_classes = [AdminOrSuperUser, ]
+        return super(GenreViewSet, self).get_permissions()
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -163,15 +205,21 @@ class TitleViewSet(viewsets.ModelViewSet):
     Реализована фильтрация по полям: 'category', 'genre', 'name', 'year'
     """
     queryset = Title.objects.all()
-    permission_classes = (AdminOrReadOnly,)
-    filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('category', 'genre', 'name', 'year')
     pagination_class = PageNumberPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitleFilter
 
     def get_serializer_class(self):
         if self.request.method == "GET":
             return Title_GET_Serializer
         return Title_OTHER_Serializer
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            self.permission_classes = [AdminOrReadOnly, ]
+        else:
+            self.permission_classes = [AdminOrSuperUser, ]
+        return super(TitleViewSet, self).get_permissions()
 
 
 class ReviewViewSet(viewsets.GenericViewSet):
