@@ -43,6 +43,24 @@ class AdminOrSuperUser(permissions.BasePermission):
                 and request.user.is_staff is True))
 
 
+class AdminOrSuperUserOrModerator(permissions.BasePermission):
+    """ Создаем и настраиваем пермишены для сериализаторов """
+
+    def has_permission(self, request, view):
+        return ((request.user.is_authenticated and request.user.role == 'admin')
+                or (request.user.is_authenticated and
+                    request.user.is_staff is True)
+                or (request.user.is_authenticated
+                    and request.user.role == 'moderator'))
+
+    def has_object_permission(self, request, view, obj):
+        return ((request.user.is_authenticated and request.user.role == 'admin')
+                or (request.user.is_authenticated and
+                    request.user.is_staff is True)
+                or (request.user.is_authenticated
+                    and request.user.role == 'moderator'))
+
+
 class AdminOrAuthUser(permissions.BasePermission):
     """ Создаем и настраиваем пермишены для сериализаторов """
 

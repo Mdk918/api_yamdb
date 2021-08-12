@@ -13,7 +13,8 @@ from .filters import TitleFilter
 from .permissions import (AdminOrReadOnly,
                           AuthorOrModeratorOrAdminOrReadOnly,
                           AdminOrSuperUser,
-                          AdminOrAuthUser)
+                          AdminOrAuthUser,
+                          AdminOrSuperUserOrModerator)
 from .serializers import (UserCreateCustomSerializer,
                           CategorySerializer,
                           GenreSerializer,
@@ -23,6 +24,8 @@ from .serializers import (UserCreateCustomSerializer,
                           CommentSerializer,
                           UserSerializers,
                           CustomUsernamedAndTokenSerializer)
+from .filters import TitleFilter
+
 
 # New user has registered. Args: user, request.
 user_registered = Signal()
@@ -42,7 +45,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return (AdminOrAuthUser(),)
         return super().get_permissions()
 
-    def retrieve(self, request, pk=None):
+    def retrieve(self, request, pk=None, *args, **kwargs):
         queryset = User.objects.all()
         user = get_object_or_404(queryset, username=pk)
         serializer = UserSerializers(user)
@@ -57,14 +60,40 @@ class UserViewSet(viewsets.ModelViewSet):
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         if request.method == 'PATCH':
+            partial = kwargs.pop('partial', True)
             if user.is_authenticated:
-                serializer = self.get_serializer(user, data=request.data)
-                serializer.is_valid(raise_exception=True)
-                self.perform_update(serializer)
-                return Response(serializer.data, status=status.HTTP_200_OK)
+                serializer = self.get_serializer(user, data=request.data, partial=partial)
+                if serializer.is_valid():
+                    if 'role' in request.data and request.user.role != 'admin':
+                        role = request.data['role']
+                        if role != request.user.role:
+                            return Response(serializer.data)
+                    self.perform_update(serializer)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response(status=status.HTTP_200_OK)
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         if request.method == 'DELETE':
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def update(self, request, pk=None, *args, **kwargs):
+        partial = kwargs.pop('partial', True)
+        queryset = User.objects.all()
+        user = get_object_or_404(queryset, username=pk)
+        if 'role' in request.data:
+            role = request.data['role']
+            if role not in ['admin', 'user', 'moderator']:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(user, data=request.data, partial=partial)
+        if serializer.is_valid():
+            self.perform_update(serializer)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_200_OK)
+
+    def destroy(self, request, pk=None, *args, **kwargs):
+        queryset = User.objects.all()
+        user = get_object_or_404(queryset, username=pk)
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CreateUser(CreateAPIView):

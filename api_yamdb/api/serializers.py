@@ -4,6 +4,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+import random
 
 from reviews.models import User, Category, Genre, Title, Review, Comment
 
@@ -12,7 +13,6 @@ class UserCreateCustomSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         style={"input_type": "email"}, write_only=True
     )
-
     default_error_messages = {
         "cannot_create_user": "cannot_create_user"
     }
@@ -26,7 +26,6 @@ class UserCreateCustomSerializer(serializers.ModelSerializer):
             user = self.perform_create(validated_data)
         except IntegrityError:
             self.fail("cannot_create_user")
-
         return user
 
     def perform_create(self, validated_data):
@@ -41,7 +40,7 @@ class UserCreateCustomSerializer(serializers.ModelSerializer):
             token = default_token_generator.make_token(user)
             send_mail('Тема письма',
                       f'Confirmation code {token}',
-                      'from@example.com',  # Это поле "От кого"
+                      'from@yamdb.com',
                       [user.email],)
         return user
 
@@ -58,11 +57,6 @@ class CustomUsernamedAndTokenSerializer(serializers.Serializer):
     username = serializers.CharField()
     confirmation_code = serializers.CharField()
 
-    default_error_messages = {
-        "invalid_token": "invalid token",
-        "invalid_username": "invalid_username",
-    }
-
     def validate(self, attrs):
         validated_data = super().validate(attrs)
         username = self.initial_data.get("username", "")
@@ -73,10 +67,8 @@ class CustomUsernamedAndTokenSerializer(serializers.Serializer):
         if is_token_valid:
             return validated_data
         else:
-            key_error = "invalid_confirmation_code"
             raise ValidationError(
-                {"confirmation_code": [self.error_messages[key_error]]},
-                code=key_error
+                "invalid_confirmation_code"
             )
 
 

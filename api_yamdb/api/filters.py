@@ -8,6 +8,7 @@ class TitleFilter(filters.FilterSet):
         field_name='category__slug',
         lookup_expr='iexact'
     )
+
     genre = filters.CharFilter(field_name='genre__slug', lookup_expr='iexact')
     name = filters.CharFilter(field_name='name', lookup_expr='icontains')
 
