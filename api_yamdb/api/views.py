@@ -133,7 +133,6 @@ class ActivateToken(CreateAPIView):
             sender=self.__class__, user=user, request=self.request
         )
         refresh = RefreshToken.for_user(user)
-
         token = {
             'refresh': str(refresh),
             'access': str(refresh.access_token),
@@ -162,6 +161,7 @@ class CategoryViewSet(CreateListDestroyViewSet):
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('name',)
     pagination_class = PageNumberPagination
+    lookup_field = 'slug'
 
     def get_permissions(self):
         if self.request.method == 'GET':
@@ -185,6 +185,7 @@ class GenreViewSet(CreateListDestroyViewSet):
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('name',)
     pagination_class = PageNumberPagination
+    lookup_field = 'slug'
 
     def get_permissions(self):
         if self.request.method == 'GET':
@@ -222,10 +223,10 @@ class TitleViewSet(viewsets.ModelViewSet):
         return super(TitleViewSet, self).get_permissions()
 
 
-class ReviewViewSet(viewsets.GenericViewSet):
+class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = (AuthorOrModeratorOrAdminOrReadOnly,)
+    permission_classes = (AllowAny,)
     pagination_class = PageNumberPagination
 
     def get_queryset(self):
@@ -240,10 +241,10 @@ class ReviewViewSet(viewsets.GenericViewSet):
         serializer.save(title=title, author=self.request.user)
 
 
-class CommentViewSet(viewsets.GenericViewSet):
+class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = (AuthorOrModeratorOrAdminOrReadOnly,)
+    permission_classes = (AllowAny,)
     pagination_class = PageNumberPagination
 
     def get_queryset(self):

@@ -5,8 +5,7 @@ class AuthorOrModeratorOrAdminOrReadOnly(permissions.BasePermission):
     """ Создаем и настраиваем пермишены для сериализаторов """
 
     def has_permission(self, request, view):
-        return (request.method in permissions.SAFE_METHODS
-                or request.user.is_authenticated)
+        return True
 
     def has_object_permission(self, request, view, obj):
         return (request.method in permissions.SAFE_METHODS
