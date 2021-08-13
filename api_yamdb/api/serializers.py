@@ -1,10 +1,11 @@
 from django.db import IntegrityError, transaction
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
+from rest_framework.relations import SlugRelatedField
 from rest_framework.generics import get_object_or_404
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-import random
+
 
 from reviews.models import User, Category, Genre, Title, Review, Comment
 
@@ -107,16 +108,20 @@ class Title_OTHER_Serializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    author = SlugRelatedField(queryset=User.objects.all(),
+                              slug_field='username', required=False)
 
     class Meta:
         model = Review
-        fields = ('id', 'text', 'score')
+        fields = ('id', 'text', 'score', 'author')
         read_only_fields = ('title', 'author')
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    author = SlugRelatedField(queryset=User.objects.all(),
+                              slug_field='username', required=False)
 
     class Meta:
         model = Comment
-        fields = ('id', 'text',)
+        fields = ('id', 'text', 'author')
         read_only_fields = ('title', 'review', 'author')
