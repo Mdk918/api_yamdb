@@ -5,7 +5,8 @@ class AuthorOrModeratorOrAdminOrReadOnly(permissions.BasePermission):
     """ Создаем и настраиваем пермишены для сериализаторов """
 
     def has_permission(self, request, view):
-        return True
+        return (request.method in permissions.SAFE_METHODS
+                or request.user.is_authenticated)
 
     def has_object_permission(self, request, view, obj):
         return (request.method in permissions.SAFE_METHODS
@@ -30,39 +31,48 @@ class AdminOrSuperUser(permissions.BasePermission):
     """ Создаем и настраиваем пермишены для сериализаторов """
 
     def has_permission(self, request, view):
-        return ((request.user.is_authenticated and request.user.role == 'admin')
-                or (request.user.is_authenticated and
-                    request.user.is_staff is True))
+        user = request.user
+        return (
+            (user.is_authenticated and user.role == 'admin')
+            or (user.is_authenticated and user.is_staff is True)
+        )
 
     def has_object_permission(self, request, view, obj):
-        return ((request.user.is_authenticated and request.user.role == 'admin')
-                or (request.user.is_authenticated and
-                    request.user.is_staff is True))
+        user = request.user
+        return (
+            (user.is_authenticated and user.role == 'admin')
+            or (user.is_authenticated and user.is_staff is True)
+        )
 
 
 class AdminOrSuperUserOrModerator(permissions.BasePermission):
     """ Создаем и настраиваем пермишены для сериализаторов """
 
     def has_permission(self, request, view):
-        return ((request.user.is_authenticated and request.user.role == 'admin')
-                or (request.user.is_authenticated and
-                    request.user.is_staff is True)
-                or (request.user.is_authenticated
-                    and request.user.role == 'moderator'))
+        user = request.user
+        return (
+            (user.is_authenticated and user.role == 'admin')
+            or (user.is_authenticated and user.is_staff is True)
+            or (user.is_authenticated and user.role == 'moderator')
+        )
 
     def has_object_permission(self, request, view, obj):
-        return ((request.user.is_authenticated and request.user.role == 'admin')
-                or (request.user.is_authenticated and
-                    request.user.is_staff is True)
-                or (request.user.is_authenticated
-                    and request.user.role == 'moderator'))
+        user = request.user
+        return (
+            (user.is_authenticated and user.role == 'admin')
+            or (user.is_authenticated and user.is_staff is True)
+            or (user.is_authenticated and user.role == 'moderator')
+        )
 
 
 class AdminOrAuthUser(permissions.BasePermission):
     """ Создаем и настраиваем пермишены для сериализаторов """
 
     def has_object_permission(self, request, view, obj):
-        return ((request.user.is_authenticated and request.user.role == 'admin')
-                or (request.user.is_authenticated and
-                    request.user.is_staff is True) or
-                request.user.is_authenticated)
+        user = request.user
+
+        return (
+            (user.is_authenticated and user.role == 'admin')
+            or (user.is_authenticated and user.is_staff is True)
+            or user.is_authenticated
+        )

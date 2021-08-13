@@ -14,8 +14,7 @@ from reviews.models import User, Category, Genre, Title, Review, Comment
 from .permissions import (AdminOrReadOnly,
                           AuthorOrModeratorOrAdminOrReadOnly,
                           AdminOrSuperUser,
-                          AdminOrAuthUser,
-                          AdminOrSuperUserOrModerator)
+                          AdminOrAuthUser)
 from .serializers import (UserCreateCustomSerializer,
                           CategorySerializer,
                           GenreSerializer,
@@ -63,7 +62,9 @@ class UserViewSet(viewsets.ModelViewSet):
         if request.method == 'PATCH':
             partial = kwargs.pop('partial', True)
             if user.is_authenticated:
-                serializer = self.get_serializer(user, data=request.data, partial=partial)
+                serializer = self.get_serializer(
+                    user, data=request.data, partial=partial
+                )
                 if serializer.is_valid():
                     if 'role' in request.data and request.user.role != 'admin':
                         role = request.data['role']
@@ -84,7 +85,9 @@ class UserViewSet(viewsets.ModelViewSet):
             role = request.data['role']
             if role not in ['admin', 'user', 'moderator']:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
-        serializer = self.get_serializer(user, data=request.data, partial=partial)
+        serializer = self.get_serializer(
+            user, data=request.data, partial=partial
+        )
         if serializer.is_valid():
             self.perform_update(serializer)
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -107,7 +110,9 @@ class CreateUser(CreateAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
+        return Response(
+            serializer.data, status=status.HTTP_200_OK, headers=headers
+        )
 
 
 class ActivateToken(CreateAPIView):
@@ -226,7 +231,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = (AllowAny,)
+    permission_classes = (AuthorOrModeratorOrAdminOrReadOnly,)
     pagination_class = PageNumberPagination
 
     def get_queryset(self):
@@ -235,42 +240,16 @@ class ReviewViewSet(viewsets.ModelViewSet):
         reviews = title.reviews.all()
         return reviews
 
-    def create(self, request, *args, **kwargs):
-        user = request.user
-        if user.is_authenticated:
-            title_id = self.kwargs.get('title_id')
-            title = get_object_or_404(Title, pk=title_id)
-            reviews = Review.objects.filter(
-                title=title_id).values_list('author', flat=True)
-            if user.id in reviews:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save(title=title, author=self.request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def update(self, request, pk=None, *args, **kwargs):
-        partial = kwargs.pop('partial', True)
-        queryset = Review.objects.all()
-        review = get_object_or_404(queryset, pk=pk)
-        print(review)
-        print(review.author)
-        print(request.user)
-        print(request.user.role)
-        if request.user != review.author:
-            if request.user.role not in ['moderator', 'admin']:
-                return Response(status=status.HTTP_403_FORBIDDEN)
-        serializer = self.get_serializer(review, data=request.data, partial=partial)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_200_OK)
+    def perform_create(self, serializer):
+        title_id = self.kwargs.get('title_id')
+        title = get_object_or_404(Title, pk=title_id)
+        serializer.save(title=title, author=self.request.user)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = (AllowAny,)
+    permission_classes = (AuthorOrModeratorOrAdminOrReadOnly,)
     pagination_class = PageNumberPagination
 
     def get_queryset(self):
@@ -284,6 +263,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         title_id = self.kwargs.get('title_id')
         review_id = self.kwargs.get('review_id')
-        title = get_object_or_404(Title, pk=title_id)
+        get_object_or_404(Title, pk=title_id)
         review = get_object_or_404(Review, pk=review_id)
-        serializer.save(title=title, review=review, author=self.request.user)
+        serializer.save(review=review, author=self.request.user)

@@ -1,7 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.core.exceptions import ValidationError
 
 
 class User(AbstractUser):
@@ -67,6 +66,7 @@ class Title(models.Model):
                                  null=True,
                                  related_name='titles',
                                  verbose_name='Категория')
+    rating = models.FloatField(null=True, blank=True)
 
     class Meta:
         verbose_name_plural = 'Названия произведений'
@@ -77,6 +77,7 @@ class Title(models.Model):
 
 class Review(models.Model):
     text = models.TextField()
+    pub_date = models.DateTimeField(auto_now_add=True)
     score = models.IntegerField(
         default=1,
         validators=[MinValueValidator(1), MaxValueValidator(10)]
@@ -92,14 +93,18 @@ class Review(models.Model):
         related_name='reviews'
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title', 'author'],
+                name='Unique'
+            )
+        ]
+
 
 class Comment(models.Model):
     text = models.TextField()
-    title = models.ForeignKey(
-        Title,
-        on_delete=models.CASCADE,
-        related_name='comments'
-    )
+    pub_date = models.DateTimeField(auto_now_add=True)
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,

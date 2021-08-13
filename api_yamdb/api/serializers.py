@@ -1,11 +1,11 @@
 from django.db import IntegrityError, transaction
-from rest_framework import serializers, status
+from django.db.models import Avg
+from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.relations import SlugRelatedField
 from rest_framework.generics import get_object_or_404
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-
 
 from reviews.models import User, Category, Genre, Title, Review, Comment
 
@@ -88,10 +88,16 @@ class GenreSerializer(serializers.ModelSerializer):
 class Title_GET_Serializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(many=True, read_only=True)
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
-        fields = ('id', 'name', 'year', 'description', 'category', 'genre')
+        fields = (
+            'id', 'name', 'year', 'description', 'category', 'genre', 'rating'
+        )
+
+    def get_rating(self, obj):
+        return obj.reviews.all().aggregate(Avg('score'))['score__avg']
 
 
 class Title_OTHER_Serializer(serializers.ModelSerializer):
@@ -113,8 +119,22 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ('id', 'text', 'score', 'author')
+        fields = ('id', 'text', 'score', 'pub_date', 'author')
         read_only_fields = ('title', 'author')
+
+    def create(self, validated_data):
+        title = validated_data['title']
+        author = validated_data['author']
+        unique_object = Review.objects.filter(
+            title=title,
+            author=author
+        )
+        if unique_object:
+            raise ValidationError(
+                'Невозможно заново написать отзыв'
+            )
+        review = Review.objects.create(**validated_data)
+        return review
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -123,5 +143,5 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ('id', 'text', 'author')
-        read_only_fields = ('title', 'review', 'author')
+        fields = ('id', 'text', 'author', 'pub_date')
+        read_only_fields = ('review', 'author')
