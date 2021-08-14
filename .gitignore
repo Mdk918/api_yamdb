@@ -1,4 +1,3 @@
-# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -147,4 +146,3 @@ dmypy.json
 
 # папки со статикой и медиа
 media/
-sent_emails/
