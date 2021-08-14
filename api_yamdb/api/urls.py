@@ -8,7 +8,7 @@ from .views import (UserViewSet,
                     CommentViewSet,
                     ActivateToken,)
 from rest_framework.routers import SimpleRouter
-router = SimpleRouter()
+router = SimpleRouter() # Подключаем роутер
 
 router.register('users', UserViewSet)
 router.register('categories', CategoryViewSet, basename='categories')

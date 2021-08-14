@@ -4,6 +4,8 @@ from django.db import models
 
 
 class User(AbstractUser):
+    """ Создаем камстомную модель пользователя
+        под нужды проекта. """
     ROLE_ADMIN = 'admin'
     ROLE_MODERATOR = 'moderator'
     ROLE_USER = 'user'
@@ -25,6 +27,8 @@ class User(AbstractUser):
 
 
 class Category(models.Model):
+    """ Создаем  модель категорий
+           под нужды проекта. """
     name = models.CharField(max_length=200, verbose_name='Категория')
     slug = models.SlugField(unique=True)
 
@@ -37,6 +41,8 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
+    """ Создаем  модель жанров
+           под нужды проекта. """
     name = models.CharField(max_length=200, verbose_name='Жанр')
     slug = models.SlugField(unique=True, null=False)
 
@@ -49,6 +55,8 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
+    """ Создаем  модель тайтлов
+           под нужды проекта. """
     name = models.CharField(max_length=200,
                             verbose_name='Название произведения')
     year = models.PositiveSmallIntegerField(
@@ -76,6 +84,8 @@ class Title(models.Model):
 
 
 class Review(models.Model):
+    """ Создаем  модель отзывов
+           под нужды проекта. """
     text = models.TextField()
     pub_date = models.DateTimeField(auto_now_add=True)
     score = models.IntegerField(
@@ -103,6 +113,8 @@ class Review(models.Model):
 
 
 class Comment(models.Model):
+    """ Создаем модель комментариев
+           под нужды проекта. """
     text = models.TextField()
     pub_date = models.DateTimeField(auto_now_add=True)
     review = models.ForeignKey(

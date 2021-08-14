@@ -1,16 +1,17 @@
-from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth.tokens import default_token_generator
+from django_filters.rest_framework import DjangoFilterBackend
 from django.dispatch import Signal
-from rest_framework.decorators import action
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.response import Response
-from rest_framework.generics import CreateAPIView, get_object_or_404
 from rest_framework import filters, mixins, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.generics import CreateAPIView, get_object_or_404
 from rest_framework.permissions import AllowAny
 from rest_framework.pagination import PageNumberPagination
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.response import Response
 
 
 from reviews.models import User, Category, Genre, Title, Review, Comment
+from .filters import TitleFilter
 from .permissions import (AdminOrReadOnly,
                           AuthorOrModeratorOrAdminOrReadOnly,
                           AdminOrSuperUser,
@@ -24,7 +25,6 @@ from .serializers import (UserCreateCustomSerializer,
                           CommentSerializer,
                           UserSerializers,
                           CustomUsernamedAndTokenSerializer)
-from .filters import TitleFilter
 
 
 # New user has registered. Args: user, request.
@@ -35,6 +35,8 @@ user_activated = Signal()
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """ Создаем вьюсет для вывода пользователей и
+        настраиваем его."""
     queryset = User.objects.all()
     serializer_class = UserSerializers
     permission_classes = (AdminOrSuperUser,)
@@ -101,6 +103,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class CreateUser(CreateAPIView):
+    """ Создаем вьюсет для регистрации пользователей и
+           настраиваем его."""
+
     queryset = User.objects.all()
     serializer_class = UserCreateCustomSerializer
     permission_classes = (AllowAny,)
@@ -116,6 +121,7 @@ class CreateUser(CreateAPIView):
 
 
 class ActivateToken(CreateAPIView):
+    """ Создаем вью для вывода получения токена. """
     serializer_class = CustomUsernamedAndTokenSerializer
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
@@ -229,6 +235,8 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
+    """ Создаем вьюсет для вывода отзывов и
+           настраиваем его."""
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     permission_classes = (AuthorOrModeratorOrAdminOrReadOnly,)
@@ -247,6 +255,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
+    """ Создаем вьюсет для вывода комментариев и
+           настраиваем его."""
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = (AuthorOrModeratorOrAdminOrReadOnly,)
