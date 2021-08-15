@@ -47,7 +47,7 @@ class UserCreateCustomSerializer(serializers.ModelSerializer):
 
 
 class UserSerializers(serializers.ModelSerializer):
-    """ Сериализатор сериализатор для вывода пользователей. """
+    """ Сериализатор для вывода пользователей. """
 
     class Meta:
         model = User
