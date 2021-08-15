@@ -19,8 +19,8 @@ from .permissions import (AdminOrReadOnly,
 from .serializers import (UserCreateCustomSerializer,
                           CategorySerializer,
                           GenreSerializer,
-                          Title_GET_Serializer,
-                          Title_OTHER_Serializer,
+                          TitleListSerializer,
+                          TitleOtherSerializer,
                           ReviewSerializer,
                           CommentSerializer,
                           UserSerializers,
@@ -67,14 +67,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 serializer = self.get_serializer(
                     user, data=request.data, partial=partial
                 )
-                if serializer.is_valid():
-                    if 'role' in request.data and request.user.role != 'admin':
-                        role = request.data['role']
-                        if role != request.user.role:
-                            return Response(serializer.data)
-                    self.perform_update(serializer)
-                    return Response(serializer.data, status=status.HTTP_200_OK)
-                return Response(status=status.HTTP_200_OK)
+                serializer.is_valid(raise_exception=True)
+                serializer.save(role=request.user.role, partial=True)
+                return Response(serializer.data)
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         if request.method == 'DELETE':
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -85,7 +80,8 @@ class UserViewSet(viewsets.ModelViewSet):
         user = get_object_or_404(queryset, username=pk)
         if 'role' in request.data:
             role = request.data['role']
-            if role not in ['admin', 'user', 'moderator']:
+            if role not in [User.ROLE_ADMIN, User.ROLE_USER,
+                            User.ROLE_MODERATOR]:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(
             user, data=request.data, partial=partial
@@ -155,7 +151,8 @@ class CreateListDestroyViewSet(mixins.CreateModelMixin,
                                mixins.ListModelMixin,
                                mixins.DestroyModelMixin,
                                viewsets.GenericViewSet):
-    pass
+    """Вьюсет на миксинах для дальнейшего использования
+       в других отображениях. """
 
 
 class CategoryViewSet(CreateListDestroyViewSet):
@@ -176,9 +173,9 @@ class CategoryViewSet(CreateListDestroyViewSet):
 
     def get_permissions(self):
         if self.request.method == 'GET':
-            self.permission_classes = [AdminOrReadOnly, ]
+            self.permission_classes = (AdminOrReadOnly,)
         else:
-            self.permission_classes = [AdminOrSuperUser, ]
+            self.permission_classes = (AdminOrSuperUser,)
         return super(CategoryViewSet, self).get_permissions()
 
 
@@ -200,9 +197,9 @@ class GenreViewSet(CreateListDestroyViewSet):
 
     def get_permissions(self):
         if self.request.method == 'GET':
-            self.permission_classes = [AdminOrReadOnly, ]
+            self.permission_classes = (AdminOrReadOnly,)
         else:
-            self.permission_classes = [AdminOrSuperUser, ]
+            self.permission_classes = (AdminOrSuperUser,)
         return super(GenreViewSet, self).get_permissions()
 
 
@@ -223,14 +220,14 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.request.method == "GET":
-            return Title_GET_Serializer
-        return Title_OTHER_Serializer
+            return TitleListSerializer
+        return TitleOtherSerializer
 
     def get_permissions(self):
         if self.request.method == 'GET':
-            self.permission_classes = [AdminOrReadOnly, ]
+            self.permission_classes = (AdminOrReadOnly,)
         else:
-            self.permission_classes = [AdminOrSuperUser, ]
+            self.permission_classes = (AdminOrSuperUser,)
         return super(TitleViewSet, self).get_permissions()
 
 
@@ -263,16 +260,12 @@ class CommentViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
 
     def get_queryset(self):
-        title_id = self.kwargs.get('title_id')
-        review_id = self.kwargs.get('review_id')
-        get_object_or_404(Title, pk=title_id)
-        review = get_object_or_404(Review, pk=review_id)
+        get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+        review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
         comments = review.comments.all()
         return comments
 
     def perform_create(self, serializer):
-        title_id = self.kwargs.get('title_id')
-        review_id = self.kwargs.get('review_id')
-        get_object_or_404(Title, pk=title_id)
-        review = get_object_or_404(Review, pk=review_id)
+        get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+        review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
         serializer.save(review=review, author=self.request.user)

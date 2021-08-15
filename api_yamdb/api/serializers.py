@@ -1,17 +1,18 @@
+from django.conf import settings
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from rest_framework.relations import SlugRelatedField
 from rest_framework.generics import get_object_or_404
-from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
+from rest_framework.relations import SlugRelatedField
 
-from reviews.models import User, Category, Genre, Title, Review, Comment
+from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
 class UserCreateCustomSerializer(serializers.ModelSerializer):
-    """ Создаем сериализатор для регистрации пользователя. """
+    """ Сериализатор для регистрации пользователя. """
 
     default_error_messages = {
         "cannot_create_user": "cannot_create_user"
@@ -40,13 +41,13 @@ class UserCreateCustomSerializer(serializers.ModelSerializer):
             token = default_token_generator.make_token(user)
             send_mail('Тема письма',
                       f'Confirmation code {token}',
-                      'from@yamdb.com',
+                      settings.SITE_EMAIL,
                       [user.email],)
         return user
 
 
 class UserSerializers(serializers.ModelSerializer):
-    """ Создаем сериализатор для вывода пользователей. """
+    """ Сериализатор сериализатор для вывода пользователей. """
 
     class Meta:
         model = User
@@ -55,7 +56,7 @@ class UserSerializers(serializers.ModelSerializer):
 
 
 class CustomUsernamedAndTokenSerializer(serializers.Serializer):
-    """ Создаем сериализатор для проверки кода
+    """ Сериализатор для проверки кода
         и выписки токена для пользователя. """
     username = serializers.CharField()
     confirmation_code = serializers.CharField()
@@ -76,7 +77,7 @@ class CustomUsernamedAndTokenSerializer(serializers.Serializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    """ Создаем сериализатор для категорий. """
+    """ Сериализатор для категорий. """
 
     class Meta:
         model = Category
@@ -84,15 +85,15 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class GenreSerializer(serializers.ModelSerializer):
-    """ Создаем сериализатор для жанров. """
+    """ Сериализатор для жанров. """
 
     class Meta:
         model = Genre
         fields = ('name', 'slug')
 
 
-class Title_GET_Serializer(serializers.ModelSerializer):
-    """ Создаем сериализатор для тайтлов. """
+class TitleListSerializer(serializers.ModelSerializer):
+    """ Сериализатор для тайтлов. """
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(many=True, read_only=True)
     rating = serializers.SerializerMethodField()
@@ -107,8 +108,8 @@ class Title_GET_Serializer(serializers.ModelSerializer):
         return obj.reviews.all().aggregate(Avg('score'))['score__avg']
 
 
-class Title_OTHER_Serializer(serializers.ModelSerializer):
-    """ Создаем сериализатор для тайтлов. """
+class TitleOtherSerializer(serializers.ModelSerializer):
+    """ Сериализатор для тайтлов. """
     category = serializers.SlugRelatedField(
         queryset=Category.objects.all(), slug_field='slug'
     )
@@ -122,7 +123,7 @@ class Title_OTHER_Serializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    """ Создаем сериализатор для отзывов. """
+    """ Сериализатор для отзывов. """
     author = SlugRelatedField(queryset=User.objects.all(),
                               slug_field='username', required=False)
 
@@ -147,7 +148,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """ Создаем сериализатор для комментариев. """
+    """ Сериализатор для комментариев. """
     author = SlugRelatedField(queryset=User.objects.all(),
                               slug_field='username', required=False)
 

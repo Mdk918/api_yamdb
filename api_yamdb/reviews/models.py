@@ -10,11 +10,11 @@ class User(AbstractUser):
     ROLE_MODERATOR = 'moderator'
     ROLE_USER = 'user'
 
-    ROLE_CHOICES = {
+    ROLE_CHOICES = [
         (ROLE_ADMIN, 'админ'),
         (ROLE_MODERATOR, 'модератор'),
         (ROLE_USER, 'юзер'),
-    }
+    ]
 
     email = models.EmailField('email address', unique=True)
     password = models.CharField('password', max_length=128, blank=True)
@@ -22,7 +22,7 @@ class User(AbstractUser):
         'Биография',
         blank=True,
     )
-    role = models.CharField(verbose_name='Роль пользователя', max_length=50,
+    role = models.CharField(verbose_name='Роль пользователя', max_length=200,
                             default=ROLE_USER, choices=ROLE_CHOICES)
 
 
@@ -60,7 +60,7 @@ class Title(models.Model):
     name = models.CharField(max_length=200,
                             verbose_name='Название произведения')
     year = models.PositiveSmallIntegerField(
-        verbose_name='Нзвание произведения'
+        verbose_name='Год выхода'
     )
     description = models.TextField(verbose_name='Описание',
                                    blank=True)
@@ -88,7 +88,7 @@ class Review(models.Model):
            под нужды проекта. """
     text = models.TextField()
     pub_date = models.DateTimeField(auto_now_add=True)
-    score = models.IntegerField(
+    score = models.PositiveSmallIntegerField(
         default=1,
         validators=[MinValueValidator(1), MaxValueValidator(10)]
     )
