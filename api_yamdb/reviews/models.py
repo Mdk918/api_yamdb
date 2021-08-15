@@ -1,4 +1,7 @@
+import datetime
+
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
@@ -43,7 +46,7 @@ class Category(models.Model):
 class Genre(models.Model):
     """ Создаем  модель жанров
            под нужды проекта. """
-    name = models.CharField(max_length=200, verbose_name='Жанр')
+    name = models.CharField(max_length=200, verbose_name='Жанр', db_index=True)
     slug = models.SlugField(unique=True, null=False)
 
     class Meta:
@@ -58,7 +61,8 @@ class Title(models.Model):
     """ Создаем  модель тайтлов
            под нужды проекта. """
     name = models.CharField(max_length=200,
-                            verbose_name='Название произведения')
+                            verbose_name='Название произведения',
+                            db_index=True)
     year = models.PositiveSmallIntegerField(
         verbose_name='Год выхода'
     )
@@ -81,6 +85,14 @@ class Title(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        year = self.year
+        if year > datetime.datetime.now().year:
+            raise ValidationError(
+                "Год не может быть больше, чем текущий"
+            )
+        super().save(self, *args, **kwargs)
 
 
 class Review(models.Model):
