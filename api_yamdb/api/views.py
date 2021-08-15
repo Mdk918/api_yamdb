@@ -86,10 +86,9 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(
             user, data=request.data, partial=partial
         )
-        if serializer.is_valid():
-            self.perform_update(serializer)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_200_OK)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def destroy(self, request, pk=None, *args, **kwargs):
         queryset = User.objects.all()
