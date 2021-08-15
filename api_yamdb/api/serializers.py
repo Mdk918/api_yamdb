@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models import Avg
 from rest_framework import serializers
@@ -40,7 +41,7 @@ class UserCreateCustomSerializer(serializers.ModelSerializer):
             token = default_token_generator.make_token(user)
             send_mail('Тема письма',
                       f'Confirmation code {token}',
-                      'from@yamdb.com',
+                      settings.MAIL,
                       [user.email],)
         return user
 

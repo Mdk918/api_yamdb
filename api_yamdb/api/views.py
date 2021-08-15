@@ -67,14 +67,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 serializer = self.get_serializer(
                     user, data=request.data, partial=partial
                 )
-                if serializer.is_valid():
-                    if 'role' in request.data and request.user.role != 'admin':
-                        role = request.data['role']
-                        if role != request.user.role:
-                            return Response(serializer.data)
-                    self.perform_update(serializer)
-                    return Response(serializer.data, status=status.HTTP_200_OK)
-                return Response(status=status.HTTP_200_OK)
+                serializer.is_valid(raise_exception=True)
+                serializer.save(role=request.user.role, partial=True)
+                return Response(serializer.data)
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         if request.method == 'DELETE':
             return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
