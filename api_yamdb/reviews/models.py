@@ -60,7 +60,7 @@ class Title(models.Model):
     name = models.CharField(max_length=200,
                             verbose_name='Название произведения')
     year = models.PositiveSmallIntegerField(
-        verbose_name='Нзвание произведения'
+        verbose_name='Название произведения'
     )
     description = models.TextField(verbose_name='Описание',
                                    blank=True)
@@ -88,7 +88,7 @@ class Review(models.Model):
            под нужды проекта. """
     text = models.TextField()
     pub_date = models.DateTimeField(auto_now_add=True)
-    score = models.IntegerField(
+    score = models.PositiveSmallIntegerField(
         default=1,
         validators=[MinValueValidator(1), MaxValueValidator(10)]
     )

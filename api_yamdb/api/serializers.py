@@ -11,7 +11,7 @@ from reviews.models import User, Category, Genre, Title, Review, Comment
 
 
 class UserCreateCustomSerializer(serializers.ModelSerializer):
-    """ Создаем сериализатор для регистрации пользователя. """
+    """ Сериализатор для регистрации пользователя. """
 
     default_error_messages = {
         "cannot_create_user": "cannot_create_user"
@@ -46,7 +46,7 @@ class UserCreateCustomSerializer(serializers.ModelSerializer):
 
 
 class UserSerializers(serializers.ModelSerializer):
-    """ Создаем сериализатор для вывода пользователей. """
+    """ Сериализатор для вывода пользователей. """
 
     class Meta:
         model = User
@@ -55,7 +55,7 @@ class UserSerializers(serializers.ModelSerializer):
 
 
 class CustomUsernamedAndTokenSerializer(serializers.Serializer):
-    """ Создаем сериализатор для проверки кода
+    """ Сериализатор для проверки кода
         и выписки токена для пользователя. """
     username = serializers.CharField()
     confirmation_code = serializers.CharField()
@@ -76,7 +76,7 @@ class CustomUsernamedAndTokenSerializer(serializers.Serializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    """ Создаем сериализатор для категорий. """
+    """ Сериализатор для категорий. """
 
     class Meta:
         model = Category
@@ -84,15 +84,15 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class GenreSerializer(serializers.ModelSerializer):
-    """ Создаем сериализатор для жанров. """
+    """ Сериализатор для жанров. """
 
     class Meta:
         model = Genre
         fields = ('name', 'slug')
 
 
-class Title_GET_Serializer(serializers.ModelSerializer):
-    """ Создаем сериализатор для тайтлов. """
+class TitleListSerializer(serializers.ModelSerializer):
+    """ Сериализатор для тайтлов. """
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(many=True, read_only=True)
     rating = serializers.SerializerMethodField()
@@ -107,8 +107,8 @@ class Title_GET_Serializer(serializers.ModelSerializer):
         return obj.reviews.all().aggregate(Avg('score'))['score__avg']
 
 
-class Title_OTHER_Serializer(serializers.ModelSerializer):
-    """ Создаем сериализатор для тайтлов. """
+class TitleOtherSerializer(serializers.ModelSerializer):
+    """ Сериализатор для тайтлов. """
     category = serializers.SlugRelatedField(
         queryset=Category.objects.all(), slug_field='slug'
     )
@@ -122,7 +122,7 @@ class Title_OTHER_Serializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    """ Создаем сериализатор для отзывов. """
+    """ Сериализатор для отзывов. """
     author = SlugRelatedField(queryset=User.objects.all(),
                               slug_field='username', required=False)
 
@@ -147,7 +147,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """ Создаем сериализатор для комментариев. """
+    """ Сериализатор для комментариев. """
     author = SlugRelatedField(queryset=User.objects.all(),
                               slug_field='username', required=False)
 

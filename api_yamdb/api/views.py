@@ -19,8 +19,8 @@ from .permissions import (AdminOrReadOnly,
 from .serializers import (UserCreateCustomSerializer,
                           CategorySerializer,
                           GenreSerializer,
-                          Title_GET_Serializer,
-                          Title_OTHER_Serializer,
+                          TitleListSerializer,
+                          TitleOtherSerializer,
                           ReviewSerializer,
                           CommentSerializer,
                           UserSerializers,
@@ -176,9 +176,9 @@ class CategoryViewSet(CreateListDestroyViewSet):
 
     def get_permissions(self):
         if self.request.method == 'GET':
-            self.permission_classes = [AdminOrReadOnly, ]
+            self.permission_classes = (AdminOrReadOnly,)
         else:
-            self.permission_classes = [AdminOrSuperUser, ]
+            self.permission_classes = (AdminOrSuperUser,)
         return super(CategoryViewSet, self).get_permissions()
 
 
@@ -200,9 +200,9 @@ class GenreViewSet(CreateListDestroyViewSet):
 
     def get_permissions(self):
         if self.request.method == 'GET':
-            self.permission_classes = [AdminOrReadOnly, ]
+            self.permission_classes = (AdminOrReadOnly,)
         else:
-            self.permission_classes = [AdminOrSuperUser, ]
+            self.permission_classes = (AdminOrSuperUser,)
         return super(GenreViewSet, self).get_permissions()
 
 
@@ -223,14 +223,14 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.request.method == "GET":
-            return Title_GET_Serializer
-        return Title_OTHER_Serializer
+            return TitleListSerializer
+        return TitleOtherSerializer
 
     def get_permissions(self):
         if self.request.method == 'GET':
-            self.permission_classes = [AdminOrReadOnly, ]
+            self.permission_classes = (AdminOrReadOnly,)
         else:
-            self.permission_classes = [AdminOrSuperUser, ]
+            self.permission_classes = (AdminOrSuperUser,)
         return super(TitleViewSet, self).get_permissions()
 
 
@@ -263,16 +263,12 @@ class CommentViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
 
     def get_queryset(self):
-        title_id = self.kwargs.get('title_id')
-        review_id = self.kwargs.get('review_id')
-        get_object_or_404(Title, pk=title_id)
-        review = get_object_or_404(Review, pk=review_id)
+        get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+        review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
         comments = review.comments.all()
         return comments
 
     def perform_create(self, serializer):
-        title_id = self.kwargs.get('title_id')
-        review_id = self.kwargs.get('review_id')
-        get_object_or_404(Title, pk=title_id)
-        review = get_object_or_404(Review, pk=review_id)
+        get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+        review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
         serializer.save(review=review, author=self.request.user)
