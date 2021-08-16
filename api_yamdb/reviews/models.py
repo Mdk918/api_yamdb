@@ -43,7 +43,7 @@ class Category(models.Model):
 class Genre(models.Model):
     """ Создаем  модель жанров
            под нужды проекта. """
-    name = models.CharField(max_length=200, verbose_name='Жанр', db_index=True)
+    name = models.CharField(max_length=200, verbose_name='Жанр')
     slug = models.SlugField(unique=True, null=False)
 
     class Meta:
@@ -58,10 +58,10 @@ class Title(models.Model):
     """ Создаем  модель тайтлов
            под нужды проекта. """
     name = models.CharField(max_length=200,
-                            verbose_name='Название произведения',
-                            db_index=True)
+                            verbose_name='Название произведения')
     year = models.PositiveSmallIntegerField(
-        verbose_name='Год выхода'
+        verbose_name='Год выхода',
+        db_index=True
     )
     description = models.TextField(verbose_name='Описание',
                                    blank=True)
@@ -88,7 +88,7 @@ class Review(models.Model):
     """ Создаем  модель отзывов
            под нужды проекта. """
     text = models.TextField()
-    pub_date = models.DateTimeField(auto_now_add=True)
+    pub_date = models.DateTimeField(auto_now_add=True, db_index=True)
     score = models.PositiveSmallIntegerField(
         default=1,
         validators=[MinValueValidator(1), MaxValueValidator(10)]
@@ -117,7 +117,7 @@ class Comment(models.Model):
     """ Создаем модель комментариев
            под нужды проекта. """
     text = models.TextField()
-    pub_date = models.DateTimeField(auto_now_add=True)
+    pub_date = models.DateTimeField(auto_now_add=True, db_index=True)
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
